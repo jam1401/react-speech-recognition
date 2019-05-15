@@ -14,6 +14,7 @@ export default function SpeechRecognition(options) {
       : null
     const browserSupportsSpeechRecognition = recognition !== null
     let listening
+    let isSilent = false
     if (
       !browserSupportsSpeechRecognition ||
       (options && options.autoStart === false)
@@ -27,6 +28,7 @@ export default function SpeechRecognition(options) {
     let interimTranscript = ''
     let finalTranscript = ''
 
+
     return class SpeechRecognitionContainer extends Component {
       constructor(props) {
         super(props)
@@ -36,12 +38,14 @@ export default function SpeechRecognition(options) {
           recognition.interimResults = true
           recognition.onresult = this.updateTranscript.bind(this)
           recognition.onend = this.onRecognitionDisconnect.bind(this)
+          recognition.onaudioend = this.onAudionEnd.bind(this)
         }
 
         this.state = {
           interimTranscript,
           finalTranscript,
-          listening
+          listening,
+          isSilent
         }
       }
 
@@ -76,6 +80,14 @@ export default function SpeechRecognition(options) {
           }
         }
         pauseAfterDisconnect = false
+      }
+
+      onAudionEnd() {
+        isSilent = true
+        this.setState({
+          isSilent
+        })
+        console.log("Detected audio end");
       }
 
       updateTranscript(event) {
@@ -118,7 +130,8 @@ export default function SpeechRecognition(options) {
             // Tried to start recognition after it has already started - safe to swallow this error
           }
           listening = true
-          this.setState({ listening })
+          isSilent = false
+          this.setState({ listening, isSilent })
         }
       }
 
